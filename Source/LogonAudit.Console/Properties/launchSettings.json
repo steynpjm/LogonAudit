@@ -2,7 +2,7 @@
   "profiles": {
     "LogonAudit.Console": {
       "commandName": "Project",
-      "commandLineArgs": "list"
+      "commandLineArgs": "ipList --ip 127.0.0.1 --days 10"
     }
   }
 }
