@@ -1,0 +1,32 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<OutputType>Exe</OutputType>
+		<TargetFramework>net9.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<COMReference Include="NetFwTypeLib">
+			<WrapperTool>tlbimp</WrapperTool>
+			<VersionMinor>0</VersionMinor>
+			<VersionMajor>1</VersionMajor>
+			<Guid>58fbcf7c-e7a9-467c-80b3-fc65e8fcca08</Guid>
+			<Lcid>0</Lcid>
+			<Isolated>false</Isolated>
+			<EmbedInteropTypes>true</EmbedInteropTypes>
+		</COMReference>
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="System.Diagnostics.EventLog" Version="10.0.0-preview.6.25358.103" />
+		<PackageReference Include="System.CommandLine" Version="2.0.0-beta6.25358.103" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <ProjectReference Include="..\LogonAudit.CommandProcessorts\LogonAudit.CommandProcessors.csproj" />
+	  <ProjectReference Include="..\LogonAudit.Common\LogonAudit.Common.csproj" />
+	</ItemGroup>
+
+</Project>
