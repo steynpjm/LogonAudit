@@ -7,7 +7,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LogonAudit.Console", "Logon
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LogonAudit.Common", "LogonAudit.Common\LogonAudit.Common.csproj", "{24954B00-1866-4A28-B01A-9394E4A4AD50}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LogonAudit.CommandProcessors", "LogonAudit.CommandProcessorts\LogonAudit.CommandProcessors.csproj", "{A695A9A7-E1E5-4A88-852A-4F1A4E60EE02}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LogonAudit.CommandProcessors", "LogonAudit.CommandProcessors\LogonAudit.CommandProcessors.csproj", "{A695A9A7-E1E5-4A88-852A-4F1A4E60EE02}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

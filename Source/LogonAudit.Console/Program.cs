@@ -1,4 +1,5 @@
 ﻿using LogonAudit.CommandProcessors;
+using LogonAudit.Common.EventArguments;
 using LogonAudit.Common.Interfaces;
 using System.CommandLine;
 using System.Runtime.InteropServices;
@@ -72,10 +73,10 @@ namespace LogonAudit.Console
 
 			if (progress != null)
 			{
-				progress.Progress += (sender, e) =>
+				if (progress != null)
 				{
-					System.Console.WriteLine($"Progress: {e.ProgressMessage}");
-				};
+					progress.Progress += HandleProgressReport;
+				}
 			}
 
 			await ipListCommand.Process();
@@ -89,10 +90,7 @@ namespace LogonAudit.Console
 
 			if (progress != null)
 			{
-				progress.Progress += (sender, e) =>
-				{
-					System.Console.WriteLine($"Progress: {e.ProgressMessage}");
-				};
+				progress.Progress += HandleProgressReport;	
 			}
 
 			await listCommand.Process();
@@ -105,6 +103,11 @@ namespace LogonAudit.Console
 				WindowsPrincipal principal = new WindowsPrincipal(identity);
 				return principal.IsInRole(WindowsBuiltInRole.Administrator);
 			}
+		}
+
+		private static void HandleProgressReport(object? sender, ProgressReportEventArgs e)
+		{
+			System.Console.WriteLine(e.ProgressMessage);
 		}
 
 		[DllImport("ole32.dll")]

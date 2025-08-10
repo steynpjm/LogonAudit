@@ -25,7 +25,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <ProjectReference Include="..\LogonAudit.CommandProcessorts\LogonAudit.CommandProcessors.csproj" />
+	  <ProjectReference Include="..\LogonAudit.CommandProcessors\LogonAudit.CommandProcessors.csproj" />
 	  <ProjectReference Include="..\LogonAudit.Common\LogonAudit.Common.csproj" />
 	</ItemGroup>
 
