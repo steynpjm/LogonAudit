@@ -68,13 +68,26 @@ namespace LogonAudit.Console
 			Command ipBlockCommand = new("ipBlock", "Block the defined IP address using the Windows Firewall.") { optionIPAddress, optionFireWallRuleName };
 			ipBlockCommand.SetAction(x => CreateIPBlockSubCommand(x.GetRequiredValue(optionIPAddress), x.GetValue(optionFireWallRuleName)));
 
+			Command ipInfoCommand = new("ipInfo", "Get detailed information about an IP address from ipinfo.io") { optionIPAddress };
+			ipInfoCommand.SetAction(x => CreateIPInfoSubCommand(x.GetRequiredValue(optionIPAddress)));
+
 			rootCommand.Add(listCommand);
 			rootCommand.Add(ipListCommand);
 			rootCommand.Add(ipBlockCommand);
-
+			rootCommand.Add(ipInfoCommand);
 
 			ParseResult parseResult = rootCommand.Parse(args);
 			return parseResult.Invoke();
+		}
+
+		private static async Task CreateIPInfoSubCommand(string ipAddress)
+		{
+			ICommandProcessor ipInfoCommand = new CommandProcessors.IPInfoCommand(ipAddress);
+			if (ipInfoCommand is IIndicateProgress progress)
+			{
+				progress.Progress += HandleProgressReport;
+			}
+			await ipInfoCommand.Process();
 		}
 
 		private static void CreateIPBlockSubCommand(string ipAddress, string? firewallRuleName)
