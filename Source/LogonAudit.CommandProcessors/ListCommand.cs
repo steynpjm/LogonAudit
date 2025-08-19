@@ -32,15 +32,59 @@ namespace LogonAudit.CommandProcessors
 				logEntries.Add(record);
 			}
 
-			Parallel.ForEach(logEntries, record =>
-			{
-				AddIfHasIp(record, cutoffDate, logEntriesWithIp);
-			});
+			Parallel.ForEach(logEntries, record => AddIfHasIp(record, cutoffDate, logEntriesWithIp));
 
 			NotifyProgress($"Audit Failure entries with IPs found = {logEntriesWithIp.Count}");
 
+			// Work through the log entries with IP and create a summary of counts against each IP address.
+			var ipCounts = logEntriesWithIp
+				.Select(record => record.ToXml())
+				.Select(xml => XDocument.Parse(xml))
+				.Select(doc => ExtractIpAddress(doc))
+				.Where(ip => !string.IsNullOrWhiteSpace(ip) && ip != "-")
+				.GroupBy(ip => ip)
+				.Select(g => new { IpAddress = g.Key, Count = g.Count() })
+				.OrderByDescending(x => x.Count)
+				.Take(_topCount);
 
+			// List each IP address and its count.
+			NotifyProgress($"Top {_topCount} IP addresses with counts:");
+			foreach (var ipCount in ipCounts)
+			{
+				NotifyProgress($"{ipCount.IpAddress}: {ipCount.Count}");
+			}
 
+			await Task.Delay(5000);
+		}
+
+		private static readonly string[] TestIpAddresses = [
+    "192.168.1.10",
+    "10.0.0.5",
+    "172.16.0.3",
+    "203.0.113.42",
+    "198.51.100.7",
+		"192.168.1.11",
+		"10.0.0.6",
+		"172.16.0.4",
+		"203.0.113.43",
+		"198.51.100.8",
+		"203.0.113.44",
+		"198.51.100.9"
+];
+
+		//private string? ExtractIpAddress(XDocument doc)
+		//{
+		//    // For testing: randomly return one of the test IPs
+		//    var random = new Random(Guid.NewGuid().GetHashCode());
+		//    return TestIpAddresses[random.Next(TestIpAddresses.Length)];
+		//}
+
+		private string? ExtractIpAddress(XDocument doc)
+		{
+			XNamespace ns = "http://schemas.microsoft.com/win/2004/08/events/event";
+			return doc.Descendants(ns + "Data")
+				.FirstOrDefault(d => (string?)d.Attribute("Name") == "IpAddress")
+				?.Value;
 		}
 
 		private void AddIfHasIp(EventRecord record, DateTime cutoffDate, ConcurrentBag<EventRecord> logEntries)
@@ -57,10 +101,7 @@ namespace LogonAudit.CommandProcessors
 					XDocument doc = XDocument.Parse(xml);
 					XNamespace ns = "http://schemas.microsoft.com/win/2004/08/events/event";
 
-					string ipAddress = doc.Descendants(ns + "Data")
-																.Where(d => (string)d.Attribute("Name") == "IpAddress")
-																.Select(d => d.Value)
-																.FirstOrDefault();
+					string? ipAddress = ExtractIpAddress(doc);
 
 					if (!string.IsNullOrWhiteSpace(ipAddress) && ipAddress != "-")
 					{
@@ -75,6 +116,5 @@ namespace LogonAudit.CommandProcessors
 				throw;
 			}
 		}
-
 	}
 }

@@ -4,11 +4,15 @@ using LogonAudit.Common.Interfaces;
 using System.CommandLine;
 using System.Runtime.InteropServices;
 using System.Security.Principal;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Configuration.Json;
 
 namespace LogonAudit.Console
 {
 	internal class Program
 	{
+		private static string DefaultFirewallRuleName = "Permanent Block by Bidvest Mobility";
+
 		[STAThread]
 		static int Main(string[] args)
 		{
@@ -19,11 +23,17 @@ namespace LogonAudit.Console
 				Marshal.ThrowExceptionForHR(hr);
 			}
 
-			//if (IsAdministrator() == false)
-			//{
-			//	System.Console.WriteLine("Must be run as an administrator.");
-			//	return 0;
-			//}
+			if (IsAdministrator() == false)
+			{
+				System.Console.WriteLine("Must be run as an administrator.");
+				return 0;
+			}
+
+			IConfiguration config = new ConfigurationBuilder()
+				.AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
+				.Build();
+
+			DefaultFirewallRuleName = config["DefaultFirewallRuleName"] ?? DefaultFirewallRuleName;
 
 
 			Option<int> optionNumberOfDays = new("--days")
@@ -44,7 +54,7 @@ namespace LogonAudit.Console
 			Option<string> optionFireWallRuleName = new("--rule")
 			{
 				Description = "The Firewall Rule to apply the action to.",
-				DefaultValueFactory = x => "Permanent Block"
+				DefaultValueFactory = x => DefaultFirewallRuleName
 			};
 
 			RootCommand rootCommand = new("Analyses the Windows Security Audit event log entries.");
@@ -55,23 +65,33 @@ namespace LogonAudit.Console
 			Command ipListCommand = new("ipList", "List all events for the defined IP address.") { optionIPAddress, optionNumberOfDays };
 			ipListCommand.SetAction(x => CreateIPListSubCommand(x.GetRequiredValue(optionIPAddress), x.GetValue(optionNumberOfDays)));
 
-
-
+			Command ipBlockCommand = new("ipBlock", "Block the defined IP address using the Windows Firewall.") { optionIPAddress, optionFireWallRuleName };
+			ipBlockCommand.SetAction(x => CreateIPBlockSubCommand(x.GetRequiredValue(optionIPAddress), x.GetValue(optionFireWallRuleName)));
 
 			rootCommand.Add(listCommand);
 			rootCommand.Add(ipListCommand);
+			rootCommand.Add(ipBlockCommand);
 
 
 			ParseResult parseResult = rootCommand.Parse(args);
 			return parseResult.Invoke();
 		}
 
+		private static void CreateIPBlockSubCommand(string ipAddress, string? firewallRuleName)
+		{
+			ICommandProcessor ipBlockCommand = new CommandProcessors.IPBlockCommand(ipAddress, firewallRuleName);
+			if (ipBlockCommand is IIndicateProgress progress)
+			{
+				progress.Progress += HandleProgressReport;
+			}
+			ipBlockCommand.Process().GetAwaiter().GetResult();
+		}
+
 		private static async Task CreateIPListSubCommand(string ipAddress, int numberOfDays)
 		{
 			ICommandProcessor ipListCommand = new CommandProcessors.IPListCommand(ipAddress, numberOfDays);
-			IIndicateProgress progress = ipListCommand as IIndicateProgress;
 
-			if (progress != null)
+			if (ipListCommand is IIndicateProgress progress)
 			{
 				if (progress != null)
 				{
@@ -84,13 +104,11 @@ namespace LogonAudit.Console
 
 		private static async Task CreateListSubCommand(int numberOfDays, int topCount)
 		{
-
 			ICommandProcessor listCommand = new CommandProcessors.ListCommand(numberOfDays, topCount);
-			IIndicateProgress progress = listCommand as IIndicateProgress;
 
-			if (progress != null)
+			if (listCommand is IIndicateProgress progress)
 			{
-				progress.Progress += HandleProgressReport;	
+				progress.Progress += HandleProgressReport;
 			}
 
 			await listCommand.Process();
