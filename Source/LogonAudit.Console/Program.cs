@@ -1,11 +1,10 @@
-﻿using LogonAudit.CommandProcessors;
-using LogonAudit.Common.EventArguments;
+﻿using LogonAudit.Common.EventArguments;
 using LogonAudit.Common.Interfaces;
+using Microsoft.Extensions.Configuration;
 using System.CommandLine;
+using System.Net;
 using System.Runtime.InteropServices;
 using System.Security.Principal;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Configuration.Json;
 
 namespace LogonAudit.Console
 {
@@ -34,7 +33,6 @@ namespace LogonAudit.Console
 				.Build();
 
 			DefaultFirewallRuleName = config["DefaultFirewallRuleName"] ?? DefaultFirewallRuleName;
-
 
 			Option<int> optionNumberOfDays = new("--days")
 			{
@@ -71,13 +69,27 @@ namespace LogonAudit.Console
 			Command ipInfoCommand = new("ipInfo", "Get detailed information about an IP address from ipinfo.io") { optionIPAddress };
 			ipInfoCommand.SetAction(x => CreateIPInfoSubCommand(x.GetRequiredValue(optionIPAddress)));
 
+			Command ruleIpListCommand = new("ruleIpList", "List all the IP addresses for the given firewall rule."){ optionFireWallRuleName };
+			ruleIpListCommand.SetAction(x => CreateRuleIpListCommand(x.GetValue(optionFireWallRuleName)));
+
 			rootCommand.Add(listCommand);
 			rootCommand.Add(ipListCommand);
 			rootCommand.Add(ipBlockCommand);
 			rootCommand.Add(ipInfoCommand);
+			rootCommand.Add(ruleIpListCommand);
 
 			ParseResult parseResult = rootCommand.Parse(args);
 			return parseResult.Invoke();
+		}
+
+		private static async Task CreateRuleIpListCommand(string? firewallRuleName)
+		{
+			ICommandProcessor ipInfoCommand = new CommandProcessors.RuleIPListCommand(firewallRuleName!);
+			if (ipInfoCommand is IIndicateProgress progress)
+			{
+				progress.Progress += HandleProgressReport;
+			}
+			await ipInfoCommand.Process();
 		}
 
 		private static async Task CreateIPInfoSubCommand(string ipAddress)
@@ -92,7 +104,7 @@ namespace LogonAudit.Console
 
 		private static void CreateIPBlockSubCommand(string ipAddress, string? firewallRuleName)
 		{
-			ICommandProcessor ipBlockCommand = new CommandProcessors.IPBlockCommand(ipAddress, firewallRuleName);
+			ICommandProcessor ipBlockCommand = new CommandProcessors.IPBlockCommand(ipAddress, firewallRuleName!);
 			if (ipBlockCommand is IIndicateProgress progress)
 			{
 				progress.Progress += HandleProgressReport;
@@ -148,7 +160,6 @@ namespace LogonAudit.Console
 		private static extern void CoUninitialize();
 
 		private const uint COINIT_APARTMENTTHREADED = 0x2; // STA model
-
 
 	}
 }

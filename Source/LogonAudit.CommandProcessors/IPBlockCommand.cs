@@ -59,7 +59,7 @@ namespace LogonAudit.CommandProcessors
 			}
 			catch (Exception ex)
 			{
-				NotifyProgress($"Failed to block IP address {_ipAddress}: {ex.Message}");
+				NotifyProgress($"Failed to block IP address {_ipAddress}: {ex.Message}.");
 				throw;
 			}
 		}
